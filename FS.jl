@@ -42,5 +42,3 @@ Base.getproperty(d::Directory, f::Field{:children}) = map(x->get(d.path*x), read
 Base.propertynames(::Directory) = (:path, :children)
 
 @mutable SymLink <: FSObject
-
-cwd() = AbsolutePath(pwd())

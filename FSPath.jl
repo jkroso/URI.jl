@@ -41,6 +41,7 @@ Base.isabspath(::RelativePath) = false
 Base.isabspath(::AbsolutePath) = true
 Base.abs(p::AbsolutePath) = p
 Base.abs(p::RelativePath) = cwd()p
+cwd() = AbsolutePath(pwd())
 
 Base.:*(a::FSPath, b::AbsolutePath) = b
 Base.:*(a::FSPath, b::FSPath) = begin
