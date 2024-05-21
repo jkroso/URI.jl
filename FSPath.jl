@@ -17,7 +17,14 @@ end
 @struct AbsolutePath <: FSPath
 @struct RelativePath <: FSPath
 
-macro fs_str(str) convert(FSPath, str) end
+macro fs_str(str::String)
+  if occursin('$', str)
+    expr = Meta.parse(":(\"$(escape_string(str))\")").args[1]
+    :(convert(FSPath, $(esc(expr))))
+  else
+    convert(FSPath, str)
+  end
+end
 
 Base.convert(::Type{T}, p::AbstractString) where {T<:FSPath} = T(p)
 FSPath(str) = isabspath(str) ? AbsolutePath(str) : RelativePath(str)
