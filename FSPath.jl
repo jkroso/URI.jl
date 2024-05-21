@@ -1,4 +1,4 @@
-@use "github.com/jkroso/Sequences.jl" Cons EmptySequence rest pop ["Path" Path]
+@use "github.com/jkroso/Sequences.jl" Cons EmptySequence rest pop Path
 @use "github.com/jkroso/Prospects.jl" Field @struct @abstract
 
 """
