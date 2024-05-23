@@ -1,4 +1,4 @@
-@use "github.com/jkroso/Sequences.jl" Cons EmptySequence rest pop Path
+@use "github.com/jkroso/Sequences.jl" Sequence EmptySequence rest pop Path
 @use "github.com/jkroso/Prospects.jl" Field @struct @abstract
 
 """
@@ -11,7 +11,7 @@ fs"/a/b/c"[begin+1:end] == fs"b/c"
 ```
 """
 @abstract struct FSPath
-  path::Path{String}
+  path::Sequence{String}
 end
 
 @struct AbsolutePath <: FSPath
@@ -27,7 +27,10 @@ macro fs_str(str::String)
 end
 
 Base.convert(::Type{T}, p::AbstractString) where {T<:FSPath} = T(p)
-FSPath(str) = isabspath(str) ? AbsolutePath(str) : RelativePath(str)
+FSPath(str) = begin
+  isempty(str) && return RelativePath(EmptySequence{Path{String}}(Path{String}))
+  isabspath(str) ? AbsolutePath(str) : RelativePath(str)
+end
 AbsolutePath(str::AbstractString) = AbsolutePath(convert(Path{String}, splitpath(normpath(str[2:end]))))
 RelativePath(str::AbstractString) = RelativePath(convert(Path{String}, splitpath(normpath(str))))
 
@@ -37,9 +40,9 @@ Base.getproperty(p::FSPath, f::Field{:name}) = p.path.value
 Base.getproperty(p::FSPath, f::Field{:parent}) = typeof(p)(pop(p.path))
 Base.propertynames(p::FSPath) = (:name, :extension, :parent, :path)
 
-Base.iterate(p::FSPath) = iterate(p, reverse(p.path))
-Base.iterate(p::FSPath, seq::Cons{String}) = (seq.head, seq.tail)
-Base.iterate(p::FSPath, seq::EmptySequence{Cons{String}}) = nothing
+Base.iterate(p::FSPath) = iterate(p, p.path)
+Base.iterate(p::FSPath, seq::Sequence) = (first(seq), rest(seq))
+Base.iterate(p::FSPath, seq::EmptySequence) = nothing
 Base.length(p::FSPath) = length(p.path)
 Base.lastindex(p::FSPath) = length(p)
 Base.firstindex(p::FSPath) = 1

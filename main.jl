@@ -64,7 +64,7 @@ function Base.print(io::IO, u::URI{protocol}) where protocol
   end
   write(io, u.host)
   u.port == 0 || write(io, ':', string(u.port))
-  print(io, u.path)
+  isempty(u.path) || print(io, u.path)
   isempty(u.query) || write(io, '?', encode_query(u.query))
   isempty(u.fragment) || write(io, '#', u.fragment)
 end
@@ -78,11 +78,11 @@ const uses_fragment = Set{String}(split("hdfs ftp hdl http gopher news nntp wais
 
 function Base.isvalid(uri::URI{protocol}) where protocol
   s = string(protocol)
-  s in non_hierarchical && occursin('/', uri.path) && return false # path hierarchy not allowed
-  s in uses_query || isempty(uri.query) || return false            # query component not allowed
-  s in uses_fragment || isempty(uri.fragment) || return false      # fragment identifier component not allowed
+  s in non_hierarchical && length(uri.path) <= 1 && return false # path hierarchy not allowed
+  s in uses_query || isempty(uri.query) || return false          # query component not allowed
+  s in uses_fragment || isempty(uri.fragment) || return false    # fragment identifier component not allowed
   s in uses_authority && return true
-  return isempty(uri.username) && isempty(uri.password)            # authority component not allowed
+  return isempty(uri.username) && isempty(uri.password)          # authority component not allowed
 end
 
 """

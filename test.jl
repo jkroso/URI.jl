@@ -1,6 +1,7 @@
 @require "github.com/jkroso/Rutherford.jl/test.jl" @test testset
 @use "./FSPath.jl" @fs_str FSPath cwd
-@use "./main.jl" URI @uri_str Query encode encode_component decode_query encode_query
+@use "./FS.jl"
+@use "./main.jl" URI @uri_str encode encode_component decode_query encode_query
 
 @test fs"/a/b/c.md".extension == "md"
 @test string(fs"/a/b") == "/a/b"
@@ -19,7 +20,6 @@
 @test abs(fs"main.jl") == FSPath(pwd() * "/main.jl")
 @test abs(fs".") == cwd()
 @test FSPath(pwd()) * "main.jl" == FSPath(pwd() * "/main.jl")
-
 
 testset("URI") do
   for url in [
@@ -44,21 +44,22 @@ testset("URI") do
   end
 
   @test ==(URI("hdfs://user:password@hdfs.host:9000/root/folder/file.csv"),
-           URI{:hdfs}("user", "password", "hdfs.host", 9000, "/root/folder/file.csv", Query(), ""))
+           URI{:hdfs}("user", "password", "hdfs.host", 9000, "/root/folder/file.csv", (;), ""))
 
   @test !isvalid(URI("file:///path/to/file/with?should=work#fine"))
   @test  isvalid(URI("file:///path/to/file/with%3fshould%3dwork%23fine"))
 
-  @test URI("//google.com") == URI{Symbol("")}("", "", "google.com", 0, "", Query(), "")
+  @test URI("//google.com") == URI{Symbol("")}("", "", "google.com", 0, "", (;), "")
   @test uri"//google.com" == URI("//google.com")
-  @test uri"?a=1&b=2".query == Query(Dict("a"=>"1","b"=>"2"))
+  @test string(uri"google.com") == "google.com"
+  @test uri"?a=1&b=2".query == (a="1",b="2")
 
   @test URI("file:/a%20b").path == "/a b"
   @test URI("/main.jl")|>string == "/main.jl"
 
-  @test decode_query("a&b") == Dict("a"=>"", "b"=>"")
-  @test decode_query("a=1") == Dict("a"=>"1")
-  @test decode_query("a=1&b=2") == Dict("a"=>"1","b"=>"2")
+  @test decode_query("a&b") == (a="", b="")
+  @test decode_query("a=1") == (a="1",)
+  @test decode_query("a=1&b=2") == (a="1",b="2")
   @test decode_query("a%2Fb=1%3C2") == Dict("a/b"=>"1<2")
   @test encode_query(Dict("a"=>"1","b"=>"2")) == "b=2&a=1"
   @test encode_query(Dict("a"=>"","b"=>"")) == "b&a"
