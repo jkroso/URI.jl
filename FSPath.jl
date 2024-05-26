@@ -50,7 +50,15 @@ Base.eltype(p::FSPath) = String
 Base.isabspath(::RelativePath) = false
 Base.isabspath(::AbsolutePath) = true
 Base.abs(p::AbsolutePath) = p
-Base.abs(p::RelativePath) = cwd()p
+Base.abs(p::RelativePath) = begin
+  if p[1] == "~"
+    home()p[2:end]
+  else
+    cwd()p
+  end
+end
+
+home() = AbsolutePath(homedir())
 cwd() = AbsolutePath(pwd())
 
 Base.:*(a::FSPath, b::AbsolutePath) = b

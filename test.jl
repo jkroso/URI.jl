@@ -20,6 +20,7 @@
 @test abs(fs"main.jl") == FSPath(pwd() * "/main.jl")
 @test abs(fs".") == cwd()
 @test FSPath(pwd()) * "main.jl" == FSPath(pwd() * "/main.jl")
+@test string(abs(fs"~/Desktop")) == joinpath(homedir(), "Desktop")
 
 testset("URI") do
   for url in [
