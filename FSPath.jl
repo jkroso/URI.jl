@@ -29,8 +29,10 @@ end
 Base.convert(::Type{T}, p::AbstractString) where {T<:FSPath} = T(p)
 FSPath(str) = begin
   isempty(str) && return RelativePath(EmptySequence{Path{String}}(Path{String}))
+  startswith(str, "~") && return home()*RelativePath(str[3:end])
   isabspath(str) ? AbsolutePath(str) : RelativePath(str)
 end
+
 AbsolutePath(str::AbstractString) = AbsolutePath(convert(Path{String}, splitpath(normpath(str[2:end]))))
 RelativePath(str::AbstractString) = RelativePath(convert(Path{String}, splitpath(normpath(str))))
 
@@ -50,13 +52,7 @@ Base.eltype(p::FSPath) = String
 Base.isabspath(::RelativePath) = false
 Base.isabspath(::AbsolutePath) = true
 Base.abs(p::AbsolutePath) = p
-Base.abs(p::RelativePath) = begin
-  if p[1] == "~"
-    home()p[2:end]
-  else
-    cwd()p
-  end
-end
+Base.abs(p::RelativePath) = cwd()p
 
 home() = AbsolutePath(homedir())
 cwd() = AbsolutePath(pwd())
