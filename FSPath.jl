@@ -53,6 +53,7 @@ Base.isabspath(::RelativePath) = false
 Base.isabspath(::AbsolutePath) = true
 Base.abs(p::AbsolutePath) = p
 Base.abs(p::RelativePath) = cwd()p
+Base.map(f::Function, p::FS) where FS<:FSPath = FS(map(f, p.path))
 
 home() = AbsolutePath(homedir())
 cwd() = AbsolutePath(pwd())

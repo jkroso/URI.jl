@@ -2,18 +2,13 @@
 @use "./FSPath.jl" FSPath
 
 const regex = r"
-  (?:([A-Za-z-+\.]+):)?  # protocol
-  (?://)?
-  (?:
-    ([\w.]+)             # username
-    (?::(\w+))?          # password
-    @
-  )?
-  ([\w-]+(?:\.[\w-]+)*)? # host
-  (?::(\d{1,5}))?        # port
-  ([^?\#]*)?             # path
-  (?:\?([^\#]*))?        # query
-  (?:\#(.+))?            # fragment
+  (?:(?<protocol>[^:/?#]+):)?
+  (?://)?(?:(?<username>[^/>#@:]+)(?::(?<password>[^/>#@]+))?@)?
+  (?<host>[^:/?#\[]*)?
+  (?::(?<port>\d{1,5}))?
+  (?<path>[^?\#]*)?
+  (?:\?(?<query>[^\#]*))?
+  (?:\#(?<fragment>.+))?
 "x
 
 const empty_query = NamedTuple{(),Tuple{}}([])
@@ -32,15 +27,17 @@ end
 Parse a URI from a String
 """
 URI(uri::AbstractString) = begin
-  m = match(regex, uri).captures
-  URI{Symbol(isnothing(m[1]) ? "" : m[1])}(
-    username = isnothing(m[2]) ? "" : m[2],
-    password = isnothing(m[3]) ? "" : m[3],
-    host = isnothing(m[4]) ? "" : m[4],
-    port = isnothing(m[5]) ? 0 : parse(UInt16,m[5]),
-    path = convert(FSPath, decode(m[6])),
-    query = isnothing(m[7]) ? empty_query : decode_query(m[7]),
-    fragment = isnothing(m[8]) ? "" : m[8])
+  m = match(regex, uri)
+  @assert !isnothing(m) "Invalid URI: '$uri'"
+  protocol,user,pass,host,port,path,query,frag = m.captures
+  URI{Symbol(isnothing(protocol) ? "" : protocol)}(
+    username = isnothing(user) ? "" : user,
+    password = isnothing(pass) ? "" : pass,
+    host = isnothing(host) ? "" : host,
+    port = isnothing(port) ? 0 : parse(UInt16, port),
+    path = convert(FSPath, decode(path)),
+    query = isnothing(query) ? empty_query : decode_query(m[7]),
+    fragment = isnothing(frag) ? "" : frag)
 end
 
 Base.getproperty(u::URI, sym::Symbol) = getproperty(u, Field{sym}())
@@ -52,10 +49,12 @@ function Base.show(io::IO, u::URI)
   write(io, '"')
 end
 
+const non_hierarchical = Set{Symbol}(Symbol.(split("gopher hdl mailto tel news wais imap snews sip sips")))
+
 function Base.print(io::IO, u::URI{protocol}) where protocol
   if protocol != Symbol("")
     write(io, protocol, ':')
-    string(protocol) in non_hierarchical || write(io,  "//")
+    isempty(u.username) && isempty(u.host) || protocol in non_hierarchical || write(io,  "//")
   end
   if !isempty(u.username)
     write(io, u.username)
@@ -64,25 +63,9 @@ function Base.print(io::IO, u::URI{protocol}) where protocol
   end
   write(io, u.host)
   u.port == 0 || write(io, ':', string(u.port))
-  isempty(u.path) || print(io, u.path)
+  isempty(u.path) || print(io, map(encode_component, u.path))
   isempty(u.query) || write(io, '?', encode_query(u.query))
   isempty(u.fragment) || write(io, '#', u.fragment)
-end
-
-const uses_authority = Set{String}(split("hdfs ftp http gopher nntp telnet imap wais file mms https shttp snews
-                                          prospero rtsp rtspu rsync svn svn+ssh sftp nfs git git+ssh ldap mailto"))
-const uses_params = Set{String}(split("ftp hdl prospero http imap https shttp rtsp rtspu sip sips mms sftp tel"))
-const non_hierarchical = Set{String}(split("gopher hdl mailto news telnet wais imap snews sip sips"))
-const uses_query = Set{String}(split("http wais imap https shttp mms gopher rtsp rtspu sip sips ldap"))
-const uses_fragment = Set{String}(split("hdfs ftp hdl http gopher news nntp wais https shttp snews file prospero"))
-
-function Base.isvalid(uri::URI{protocol}) where protocol
-  s = string(protocol)
-  s in non_hierarchical && length(uri.path) <= 1 && return false # path hierarchy not allowed
-  s in uses_query || isempty(uri.query) || return false          # query component not allowed
-  s in uses_fragment || isempty(uri.fragment) || return false    # fragment identifier component not allowed
-  s in uses_authority && return true
-  return isempty(uri.username) && isempty(uri.password)          # authority component not allowed
 end
 
 """
