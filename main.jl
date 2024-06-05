@@ -31,8 +31,8 @@ URI(uri::AbstractString) = begin
   @assert !isnothing(m) "Invalid URI: '$uri'"
   protocol,user,pass,host,port,path,query,frag = m.captures
   URI{Symbol(isnothing(protocol) ? "" : protocol)}(
-    username = isnothing(user) ? "" : user,
-    password = isnothing(pass) ? "" : pass,
+    username = isnothing(user) ? "" : decode(user),
+    password = isnothing(pass) ? "" : decode(pass),
     host = isnothing(host) ? "" : host,
     port = isnothing(port) ? 0 : parse(UInt16, port),
     path = convert(FSPath, decode(path)),
@@ -49,7 +49,7 @@ function Base.show(io::IO, u::URI)
   write(io, '"')
 end
 
-const non_hierarchical = Set{Symbol}(Symbol.(split("gopher hdl mailto tel news wais imap snews sip sips")))
+const non_hierarchical = Set{Symbol}(Symbol.(split("gopher hdl mailto tel news wais snews sip sips")))
 
 function Base.print(io::IO, u::URI{protocol}) where protocol
   if protocol != Symbol("")
@@ -57,8 +57,8 @@ function Base.print(io::IO, u::URI{protocol}) where protocol
     isempty(u.username) && isempty(u.host) || protocol in non_hierarchical || write(io,  "//")
   end
   if !isempty(u.username)
-    write(io, u.username)
-    isempty(u.password) || write(io, ':', u.password)
+    write(io, encode_component(u.username))
+    isempty(u.password) || write(io, ':', encode_component(u.password))
     write(io, '@')
   end
   write(io, u.host)

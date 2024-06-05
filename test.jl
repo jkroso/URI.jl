@@ -60,4 +60,6 @@ testset("URI") do
   @test encode_query(Dict("a"=>"","b"=>"")) == "b&a"
   @test encode("http://a.b/>=1 <2.3") == "http://a.b/%3E=1%20%3C2.3"
   @test encode_component("http://a.b/>=1 <2.3") == "http%3A%2F%2Fa.b%2F>%3D1%20<2.3"
+  @test uri"imap://a%40gmail.com:mj@imap.gmail.com:993".username == "a@gmail.com"
+  @test string(uri"imap://a%40gmail.com:mj@imap.gmail.com:993") == "imap://a%40gmail.com:mj@imap.gmail.com:993"
 end
