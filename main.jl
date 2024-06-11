@@ -23,21 +23,21 @@ const empty_query = NamedTuple{(),Tuple{}}([])
   fragment::AbstractString=""
 end
 
-"""
-Parse a URI from a String
-"""
-URI(uri::AbstractString) = begin
+const empty_uri = URI{Symbol("")}()
+
+"Parse a URI from a String"
+URI(uri::AbstractString; defaults=empty_uri) = begin
   m = match(regex, uri)
   @assert !isnothing(m) "Invalid URI: '$uri'"
   protocol,user,pass,host,port,path,query,frag = m.captures
-  URI{Symbol(isnothing(protocol) ? "" : protocol)}(
-    username = isnothing(user) ? "" : decode(user),
-    password = isnothing(pass) ? "" : decode(pass),
-    host = isnothing(host) ? "" : host,
-    port = isnothing(port) ? 0 : parse(UInt16, port),
-    path = convert(FSPath, decode(path)),
-    query = isnothing(query) ? empty_query : decode_query(m[7]),
-    fragment = isnothing(frag) ? "" : frag)
+  URI{Symbol(isnothing(protocol) ? defaults.protocol : protocol)}(
+    isnothing(user) ? defaults.username : decode(user),
+    isnothing(pass) ? defaults.password : decode(pass),
+    isempty(host) ? defaults.host : host,
+    isnothing(port) ? defaults.port : parse(UInt16, port),
+    isempty(path) ? defaults.path : convert(FSPath, decode(path)),
+    isnothing(query) ? defaults.query : decode_query(m[7]),
+    isnothing(frag) ? defaults.fragment : frag)
 end
 
 Base.getproperty(u::URI, sym::Symbol) = getproperty(u, Field{sym}())

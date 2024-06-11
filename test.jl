@@ -51,6 +51,7 @@ testset("URI") do
 
   @test URI("file:/a%20b").path == fs"/a b"
   @test URI("/main.jl")|>string == "/main.jl"
+  @test string(URI("/a/b/c", defaults=uri"http://google.com")) == "http://google.com/a/b/c"
 
   @test decode_query("a&b") == (a="", b="")
   @test decode_query("a=1") == (a="1",)
