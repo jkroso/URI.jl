@@ -33,8 +33,14 @@ FSPath(str) = begin
   isabspath(str) ? AbsolutePath(str) : RelativePath(str)
 end
 
-AbsolutePath(str::AbstractString) = AbsolutePath(convert(Path{String}, splitpath(normpath(str[2:end]))))
-RelativePath(str::AbstractString) = RelativePath(convert(Path{String}, splitpath(normpath(str))))
+AbsolutePath(str::AbstractString) = AbsolutePath(convert(Path{String}, segments(str[2:end])))
+RelativePath(str::AbstractString) = RelativePath(convert(Path{String}, segments(str)))
+
+segments(str) = begin
+  str = normpath(str)
+  str == "." && return []
+  splitpath(str)
+end
 
 Base.getproperty(p::FSPath, f::Symbol) = getproperty(p, Field{f}())
 Base.getproperty(p::FSPath, f::Field{:extension}) = splitext(p.name)[2][2:end]
@@ -61,12 +67,10 @@ cwd() = AbsolutePath(pwd())
 Base.:*(a::FSPath, b::AbsolutePath) = b
 Base.:*(a::FSPath, b::FSPath) = begin
   ap = a.path
-  first(ap) == "." && return b
   bp = b.path
-  first(bp) == "." && return a
   for seg in bp
     seg == ".." || break
-    ap = pop(ap)
+    ap = isempty(ap) ? ap : pop(ap)
     bp = rest(bp)
   end
   typeof(a)(cat(ap, bp))
