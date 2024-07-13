@@ -28,7 +28,7 @@ end
 
 Base.convert(::Type{T}, p::AbstractString) where {T<:FSPath} = T(p)
 FSPath(str) = begin
-  isempty(str) && return RelativePath(EmptySequence{Path{String}}(Path{String}))
+  isempty(str) && return RelativePath(EmptySequence{String}(Path{String}))
   startswith(str, "~") && return home()*RelativePath(str[3:end])
   isabspath(str) ? AbsolutePath(str) : RelativePath(str)
 end
