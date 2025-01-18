@@ -1,24 +1,25 @@
-@use "github.com/jkroso/Sequences.jl" Sequence EmptySequence rest pop Path
 @use "github.com/jkroso/Prospects.jl" Field @struct @abstract ["BitSet.jl" @BitSet] ["Enum.jl" @Enum]
+@use "github.com/jkroso/Sequences.jl" Sequence EmptySequence rest pop Path
 
 """
-15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
- |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  └── Others - Execute
- |  |  |  |  |  |  |  |  |  |  |  |  |  |  └───── Others - Write
- |  |  |  |  |  |  |  |  |  |  |  |  |  └──────── Others - Read
- |  |  |  |  |  |  |  |  |  |  |  |  └─────────── Group - Execute
- |  |  |  |  |  |  |  |  |  |  |  └────────────── Group - Write
- |  |  |  |  |  |  |  |  |  |  └───────────────── Group - Read
- |  |  |  |  |  |  |  |  |  └──────────────────── Owner - Execute
- |  |  |  |  |  |  |  |  └─────────────────────── Owner - Write
- |  |  |  |  |  |  |  └────────────────────────── Owner - Read
- |  |  |  |  |  |  └───────────────────────────── Sticky Bit
- |  |  |  |  |  └──────────────────────────────── Set Group ID (SGID)
- |  |  |  |  └─────────────────────────────────── Set User ID (SUID)
- |  |  |  └────────────────────────────────────── 4bit file type encoding
- |  |  └───────────────────────────────────────── 4bit file type encoding
- |  └──────────────────────────────────────────── 4bit file type encoding
- └─────────────────────────────────────────────── 4bit file type encoding
+| **Bit** | **Description**     |
+|---------|---------------------|
+| 0       | Others - Execute    |
+| 1       | Others - Write      |
+| 2       | Others - Read       |
+| 3       | Group - Execute     |
+| 4       | Group - Write       |
+| 5       | Group - Read        |
+| 6       | Owner - Execute     |
+| 7       | Owner - Write       |
+| 8       | Owner - Read        |
+| 9       | Sticky Bit          |
+| 10      | Set Group ID (SGID) |
+| 11      | Set User ID (SUID)  |
+| 12      | 4 bit file type     |
+| 13      | 4 bit file type     |
+| 14      | 4 bit file type     |
+| 15      | 4 bit file type     |
 """
 @BitSet FileMode OX OW OR GE GW GR E W R sticky GID UID
 @Enum FileType file dir socket chardev link block
