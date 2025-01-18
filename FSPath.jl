@@ -125,6 +125,7 @@ end
 Base.read(p::FSPath, T) = read(string(p), T)
 Base.read(p::FSPath) = read(string(p))
 Base.write(p::FSPath, x) = write(string(p), x)
+Base.open(p::FSPath, mode) = open(string(p), mode)
 Base.ispath(p::FSPath) = ispath(string(p))
 Base.isdir(p::FSPath) = isdir(string(p))
 Base.isfile(p::FSPath) = isfile(string(p))
