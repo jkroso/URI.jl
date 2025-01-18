@@ -1,5 +1,27 @@
 @use "github.com/jkroso/Sequences.jl" Sequence EmptySequence rest pop Path
-@use "github.com/jkroso/Prospects.jl" Field @struct @abstract
+@use "github.com/jkroso/Prospects.jl" Field @struct @abstract ["BitSet.jl" @BitSet] ["Enum.jl" @Enum]
+
+"""
+15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
+ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  └── Others - Execute
+ |  |  |  |  |  |  |  |  |  |  |  |  |  |  └───── Others - Write
+ |  |  |  |  |  |  |  |  |  |  |  |  |  └──────── Others - Read
+ |  |  |  |  |  |  |  |  |  |  |  |  └─────────── Group - Execute
+ |  |  |  |  |  |  |  |  |  |  |  └────────────── Group - Write
+ |  |  |  |  |  |  |  |  |  |  └───────────────── Group - Read
+ |  |  |  |  |  |  |  |  |  └──────────────────── Owner - Execute
+ |  |  |  |  |  |  |  |  └─────────────────────── Owner - Write
+ |  |  |  |  |  |  |  └────────────────────────── Owner - Read
+ |  |  |  |  |  |  └───────────────────────────── Sticky Bit
+ |  |  |  |  |  └──────────────────────────────── Set Group ID (SGID)
+ |  |  |  |  └─────────────────────────────────── Set User ID (SUID)
+ |  |  |  └────────────────────────────────────── 4bit file type encoding
+ |  |  └───────────────────────────────────────── 4bit file type encoding
+ |  └──────────────────────────────────────────── 4bit file type encoding
+ └─────────────────────────────────────────────── 4bit file type encoding
+"""
+@BitSet FileMode OX OW OR GE GW GR E W R sticky GID UID
+@Enum FileType file dir socket chardev link block
 
 """
 A `FSPath` is conceptually a series of strings selecting a part of the FS
@@ -46,7 +68,10 @@ Base.getproperty(p::FSPath, f::Symbol) = getproperty(p, Field{f}())
 Base.getproperty(p::FSPath, f::Field{:extension}) = splitext(p.name)[2][2:end]
 Base.getproperty(p::FSPath, f::Field{:name}) = p.path.value
 Base.getproperty(p::FSPath, f::Field{:parent}) = typeof(p)(pop(p.path))
-Base.propertynames(p::FSPath) = (:name, :extension, :parent, :path)
+Base.getproperty(p::FSPath, f::Field{:exists}) = ispath(string(p))
+Base.getproperty(p::FSPath, f::Field{:type}) = FileType(bitreverse((filemode(string(p))>>8%UInt8)&0xf0))
+Base.getproperty(p::FSPath, f::Field{:mode}) = FileMode(filemode(string(p)) & 0x0fff)
+Base.propertynames(p::FSPath) = (:name, :extension, :parent, :path, :exists, :type, :mode)
 
 Base.iterate(p::FSPath) = iterate(p, p.path)
 Base.iterate(p::FSPath, seq::Sequence) = (first(seq), rest(seq))
@@ -95,3 +120,10 @@ Base.show(io::IO, ::MIME"text/html", p::FSPath) = begin
   write(io, "<div>$p</div>")
   nothing
 end
+
+Base.read(p::FSPath, T) = read(string(p), T)
+Base.read(p::FSPath) = read(string(p))
+Base.write(p::FSPath, x) = write(string(p), x)
+Base.ispath(p::FSPath) = ispath(string(p))
+Base.isdir(p::FSPath) = isdir(string(p))
+Base.isfile(p::FSPath) = isfile(string(p))
