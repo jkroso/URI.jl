@@ -128,3 +128,16 @@ Base.write(p::FSPath, x) = write(string(p), x)
 Base.ispath(p::FSPath) = ispath(string(p))
 Base.isdir(p::FSPath) = isdir(string(p))
 Base.isfile(p::FSPath) = isfile(string(p))
+Base.relpath(a::FSPath, b::FSPath) = relpath(abs(a), abs(b))
+Base.relpath(a::AbsolutePath, b::AbsolutePath) = begin
+  ap = a.path
+  bp = b.path
+  while !isempty(ap)
+    segA = first(ap)
+    segB = first(bp)
+    segA != segB && return RelativePath(cat(convert(Path{String}, fill("..", length(ap))), bp))
+    ap = rest(ap)
+    bp = rest(bp)
+  end
+  RelativePath(bp)
+end
