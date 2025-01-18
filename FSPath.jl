@@ -133,7 +133,7 @@ Base.relpath(a::FSPath, b::FSPath) = relpath(abs(a), abs(b))
 Base.relpath(a::AbsolutePath, b::AbsolutePath) = begin
   ap = a.path
   bp = b.path
-  while !isempty(ap)
+  while !isempty(ap) && !isempty(bp)
     segA = first(ap)
     segB = first(bp)
     segA != segB && return RelativePath(cat(convert(Path{String}, fill("..", length(ap))), bp))
