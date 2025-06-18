@@ -135,6 +135,7 @@ Base.mv(src::FSPath, dest::FSPath; kwargs...) = mv(string(src), string(dest); kw
 Base.cp(src::FSPath, dest::FSPath; kwargs...) = cp(string(src), string(dest); kwargs...)
 Base.cd(fn, dir::FSPath) = cd(fn, string(dir))
 Base.dirname(p::FSPath) = p.parent
+Base.basename(p::FSPath) = p.path.value
 Base.joinpath(a::FSPath, b) = a * b
 Base.relpath(a::FSPath, b::FSPath) = relpath(abs(a), abs(b))
 Base.relpath(a::AbsolutePath, b::AbsolutePath) = begin
