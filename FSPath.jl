@@ -69,6 +69,7 @@ Base.getproperty(p::FSPath, f::Symbol) = getproperty(p, Field{f}())
 Base.getproperty(p::FSPath, f::Field{:extension}) = splitext(p.name)[2][2:end]
 Base.getproperty(p::FSPath, f::Field{:name}) = p.path.value
 Base.getproperty(p::FSPath, f::Field{:parent}) = typeof(p)(pop(p.path))
+Base.getproperty(p::FSPath, f::Field{:children}) = readdir(p)
 Base.getproperty(p::FSPath, f::Field{:exists}) = ispath(string(p))
 Base.getproperty(p::FSPath, f::Field{:type}) = FileType(bitreverse((filemode(string(p))>>8%UInt8)&0xf0))
 Base.getproperty(p::FSPath, f::Field{:mode}) = FileMode(filemode(string(p)) & 0x0fff)
@@ -150,3 +151,4 @@ Base.relpath(a::AbsolutePath, b::AbsolutePath) = begin
   end
   RelativePath(bp)
 end
+Base.readdir(p::FSPath) = [joinpath(p, n) for n in readdir(string(p))]
