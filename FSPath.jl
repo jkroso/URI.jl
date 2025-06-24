@@ -152,3 +152,5 @@ Base.relpath(a::AbsolutePath, b::AbsolutePath) = begin
   RelativePath(bp)
 end
 Base.readdir(p::FSPath) = [joinpath(p, n) for n in readdir(string(p))]
+Base.filesize(p::FSPath) = filesize(string(p))
+Base.stat(p::FSPath) = stat(string(p))
