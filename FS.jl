@@ -17,12 +17,12 @@ end
   path::FSPath
 end
 
-Base.getproperty(file::FSObject, f::Symbol) = getproperty(file, Field{f}())
-Base.setproperty!(file::FSObject, f::Symbol, x) = setproperty!(file, Field{f}(), x)
 Base.getproperty(file::FSObject, f::Field{:parent}) = Directory(file.path.parent)
 
 @def struct File{type} <: FSObject end
+
 File(path::FSPath) = File{Symbol(path.extension)}(path)
+File(path::String) = File(FSPath(path))
 
 Base.getproperty(file::File, f::Field{:tags}) = get_file_tags(string(file.path))
 Base.getproperty(file::File, f::Field{:size}) = filesize(file.path)b
