@@ -28,6 +28,8 @@ Base.getproperty(file::File, f::Field{:tags}) = get_file_tags(string(file.path))
 Base.getproperty(file::File, f::Field{:size}) = filesize(file.path)B
 Base.propertynames(::File) = (:path, :size, :tags)
 
+Base.read(f::File, args...) = read(f.path, args...)
+Base.write(f::File, args...) = write(f.path, args...)
 Base.write(f::File{ext}, x) where ext = begin
   m = mime_from_extension(string(ext), MIME("text/plain"))
   write(f.path, sprint(show, m, x))
