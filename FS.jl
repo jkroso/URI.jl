@@ -1,5 +1,5 @@
 @use "github.com/jkroso/Prospects.jl" Field @field_str @def @abstract
-@use "github.com/jkroso/Units.jl" b
+@use "github.com/jkroso/Units.jl" B
 @use "./FSPath.jl" FSPath @fs_str FileType
 @use MIMEs: mime_from_extension
 
@@ -25,7 +25,7 @@ File(path::FSPath) = File{Symbol(path.extension)}(path)
 File(path::String) = File(FSPath(path))
 
 Base.getproperty(file::File, f::Field{:tags}) = get_file_tags(string(file.path))
-Base.getproperty(file::File, f::Field{:size}) = filesize(file.path)b
+Base.getproperty(file::File, f::Field{:size}) = filesize(file.path)B
 Base.propertynames(::File) = (:path, :size, :tags)
 
 Base.write(f::File{ext}, x) where ext = begin
@@ -36,7 +36,7 @@ end
 @def struct Directory <: FSObject end
 
 Base.getproperty(d::Directory, f::Field{:children}) = map(x->get(d.path*x), readdir(string(d.path)))
-Base.getproperty(d::Directory, f::Field{:size}) = sum(field"size", d.children, init=0*b)
+Base.getproperty(d::Directory, f::Field{:size}) = sum(field"size", d.children, init=0B)
 Base.propertynames(::Directory) = (:path, :children, :size)
 
 @def struct SymLink <: FSObject end
