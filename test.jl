@@ -1,4 +1,4 @@
-@require "github.com/jkroso/Rutherford.jl/test.jl" @test testset
+@use "github.com/jkroso/Rutherford.jl/test.jl" @test testset
 @use "./FSPath.jl" @fs_str FSPath cwd
 @use "./FS.jl"
 @use "./main.jl" URI @uri_str encode encode_component decode_query encode_query
@@ -11,7 +11,7 @@
 @test fs"/a/b/c"[1] == "a"
 @test fs"/a/b/" == fs"/a/b/c/"[begin:end-1]
 @test fs"/a/b/c"[begin+1:end] == fs"b/c"
-@test get(fs"./main.jl").content == String(read("./main.jl"))
+@test get(fs"./main.jl").size == filesize("./main.jl")
 @test collect(fs"/a/b/c") == ["a", "b", "c"]
 @test collect(fs"a/b/c") == ["a", "b", "c"]
 @test fs"/a/b/c"[1:3] == fs"/a/b/c"

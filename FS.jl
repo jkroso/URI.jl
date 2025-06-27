@@ -1,5 +1,7 @@
-@use "github.com/jkroso/Prospects.jl" Field @mutable @abstract
+@use "github.com/jkroso/Prospects.jl" Field @field_str @def @abstract
+@use "github.com/jkroso/Units.jl" b
 @use "./FSPath.jl" FSPath @fs_str FileType
+@use MIMEs: mime_from_extension
 
 Base.get(p::FSPath) = begin
   @assert p.exists "No FS object $p"
@@ -19,19 +21,25 @@ Base.getproperty(file::FSObject, f::Symbol) = getproperty(file, Field{f}())
 Base.setproperty!(file::FSObject, f::Symbol, x) = setproperty!(file, Field{f}(), x)
 Base.getproperty(file::FSObject, f::Field{:parent}) = Directory(file.path.parent)
 
-@mutable File{type} <: FSObject
+@def struct File{type} <: FSObject end
 File(path::FSPath) = File{Symbol(path.extension)}(path)
 
-Base.getproperty(file::File, f::Field{:content}) = read(file.path, String)
 Base.getproperty(file::File, f::Field{:tags}) = get_file_tags(string(file.path))
-Base.setproperty!(file::File, f::Field{:content}, x) = write(file.path, x)
+Base.getproperty(file::File, f::Field{:size}) = filesize(file.path)b
+Base.propertynames(::File) = (:path, :size, :tags)
 
-@mutable Directory <: FSObject
+Base.write(f::File{ext}, x) where ext = begin
+  m = mime_from_extension(ext, MIME("text/plain"))
+  write(f.path, sprint(show, m, x))
+end
+
+@def struct Directory <: FSObject end
 
 Base.getproperty(d::Directory, f::Field{:children}) = map(x->get(d.path*x), readdir(string(d.path)))
-Base.propertynames(::Directory) = (:path, :children)
+Base.getproperty(d::Directory, f::Field{:size}) = sum(field"size", d.children, init=0*b)
+Base.propertynames(::Directory) = (:path, :children, :size)
 
-@mutable SymLink <: FSObject
+@def struct SymLink <: FSObject end
 
 # Define C types and constants
 const libSystem = "libSystem.dylib"  # For getxattr
