@@ -166,3 +166,5 @@ Base.readlink(p::FSPath) = FSPath(readlink(string(p)))
 Base.realpath(p::FSPath) = AbsolutePath(realpath(string(p)))
 Base.mtime(p::FSPath) = mtime(string(p))
 Base.ctime(p::FSPath) = ctime(string(p))
+
+Base.issubset(a::T, b::T) where T<:FSPath = all(x->isequal(x[1], x[2]), zip(a,b)) && length(a) >= length(b)
