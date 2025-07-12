@@ -40,6 +40,8 @@ end
 Base.getproperty(d::Directory, f::Field{:children}) = map(x->get(d.path*x), readdir(string(d.path)))
 Base.getproperty(d::Directory, f::Field{:size}) = sum(field"size", d.children, init=0B)
 Base.propertynames(::Directory) = (:path, :children, :size)
+Base.dirname(f::File) = f.path.parent
+Base.dirname(f::Directory) = f.path
 
 @def struct SymLink <: FSObject end
 
