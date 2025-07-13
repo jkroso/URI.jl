@@ -42,10 +42,15 @@ Base.getproperty(d::Directory, f::Field{:size}) = sum(field"size", d.children, i
 Base.propertynames(::Directory) = (:path, :children, :size)
 Base.dirname(f::File) = f.path.parent
 Base.dirname(f::Directory) = f.path
-Base.isdir(f::Directory) = true
-Base.isdir(f::File) = false
+Base.isdir(::Directory) = true
+Base.isdir(::FSObject) = false
 
 @def struct SymLink <: FSObject end
+
+Base.islink(::SymLink) = true
+Base.islink(::FSObject) = false
+Base.isfile(::File) = true
+Base.isfile(::FSObject) = false
 
 # Define C types and constants
 const libSystem = "libSystem.dylib"  # For getxattr
