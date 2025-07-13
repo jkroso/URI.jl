@@ -42,6 +42,8 @@ Base.getproperty(d::Directory, f::Field{:size}) = sum(field"size", d.children, i
 Base.propertynames(::Directory) = (:path, :children, :size)
 Base.dirname(f::File) = f.path.parent
 Base.dirname(f::Directory) = f.path
+Base.isdir(f::Directory) = true
+Base.isdir(f::File) = false
 
 @def struct SymLink <: FSObject end
 
