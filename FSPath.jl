@@ -157,8 +157,8 @@ end
 Base.readdir(p::FSPath) = [joinpath(p, n) for n in readdir(string(p))]
 Base.filesize(p::FSPath) = filesize(string(p))
 Base.stat(p::FSPath) = stat(string(p))
-Base.mkdir(p::FSPath; mode=FileMode(0o755)) = mkdir(string(p); mode=convert(UInt32, mode))
-Base.mkpath(p::FSPath; mode=FileMode(0o755)) = mkpath(string(p); mode=convert(UInt32, mode))
+Base.mkdir(p::FSPath; mode=FileMode(0o755)) = (mkdir(string(p); mode=convert(UInt32, mode)); p)
+Base.mkpath(p::FSPath; mode=FileMode(0o755)) = (mkpath(string(p); mode=convert(UInt32, mode)); p)
 
 Base.chmod(p::FSPath, mode::Integer) = chmod(string(p), mode)
 if Sys.isunix()

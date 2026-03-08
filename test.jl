@@ -1,5 +1,5 @@
 @use "github.com/jkroso/Rutherford.jl/test.jl" @test testset
-@use "./FSPath.jl" @fs_str FSPath cwd
+@use "./FSPath.jl" @fs_str FSPath AbsolutePath cwd
 @use "./FS.jl"
 @use "./main.jl" URI @uri_str encode encode_component decode_query encode_query
 
@@ -25,6 +25,17 @@
 @test fs"/a/b/c" ⊆ fs"/a"
 @test !(fs"/b/b/c" ⊆ fs"/a")
 @test !(fs"/b/b/c" ⊆ fs"b")
+
+mktempdir() do tmp
+  dir = FSPath(tmp) * "a"
+  result = mkdir(dir)
+  @test result == dir
+  @test result isa AbsolutePath
+  dir2 = FSPath(tmp) * "b/c"
+  result2 = mkpath(dir2)
+  @test result2 == dir2
+  @test result2 isa AbsolutePath
+end
 
 testset("URI") do
   for uri in [
