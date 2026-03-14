@@ -40,7 +40,6 @@ URI(uri::AbstractString; defaults=empty_uri) = begin
     isnothing(frag) ? defaults.fragment : frag)
 end
 
-Base.getproperty(u::URI, sym::Symbol) = getproperty(u, Field{sym}())
 Base.getproperty(u::URI{x}, ::Field{:protocol}) where x = x
 
 function Base.show(io::IO, u::URI)
