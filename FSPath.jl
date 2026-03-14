@@ -65,7 +65,6 @@ segments(str) = begin
   splitpath(str)
 end
 
-Base.getproperty(p::FSPath, f::Symbol) = getproperty(p, Field{f}())
 Base.getproperty(p::FSPath, f::Field{:extension}) = splitext(p.name)[2][2:end]
 Base.getproperty(p::FSPath, f::Field{:name}) = p.path.value
 Base.getproperty(p::FSPath, f::Field{:parent}) = typeof(p)(pop(p.path))
