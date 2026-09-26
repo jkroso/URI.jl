@@ -56,7 +56,19 @@ FSPath(str) = begin
   isabspath(str) ? AbsolutePath(str) : RelativePath(str)
 end
 
-AbsolutePath(str::AbstractString) = AbsolutePath(convert(Path{String}, segments(str[2:end])))
+AbsolutePath(str::AbstractString) = AbsolutePath(convert(Path{String}, absolute_segments(str)))
+
+# A unix path's root is its leading `/`, which isn't a segment. A Windows path's
+# root is its drive (`C:`) or UNC share, and that is: it can't be implied the way
+# `/` is, so it stays as the first segment.
+absolute_segments(str) =
+  if Sys.iswindows()
+    segs = segments(str)
+    isempty(segs) ? segs : [rstrip(segs[1], ('\\', '/')); segs[2:end]]
+  else
+    segments(str[2:end])
+  end
+
 RelativePath(str::AbstractString) = RelativePath(convert(Path{String}, segments(str)))
 
 segments(str) = begin
@@ -112,8 +124,10 @@ Base.getindex(p::RelativePath, range::UnitRange) = RelativePath(p.path[range])
 Base.getindex(p::AbsolutePath, range::UnitRange) = (range.start == 1 ? AbsolutePath : RelativePath)(p.path[range])
 
 Base.show(io::IO, p::FSPath) = begin
-  isabspath(p) && write(io, '/')
+  isabspath(p) && !Sys.iswindows() && write(io, '/')
   join(io, p.path, '/')
+  # A bare `C:` means the drive's current directory; its root is `C:/`.
+  Sys.iswindows() && isabspath(p) && length(p) == 1 && write(io, '/')
   nothing
 end
 
