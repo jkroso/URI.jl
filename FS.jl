@@ -1,32 +1,98 @@
 @use "github.com/jkroso/Prospects.jl" Field @field_str @def @abstract
+@use "github.com/jkroso/Sequences.jl" EmptySequence Path append
 @use "github.com/jkroso/Units.jl" B
-@use "./FSPath.jl" FSPath @fs_str FileType
+@use "./FSPath.jl" FSPath AbsolutePath @fs_str FileType
 @use MIMEs: mime_from_extension
 
+# The file system is one tree of objects. Its top is the directory at `/`, and
+# every other object is made by the directory that holds it, with `child`. So
+# a directory decides what its files and its directories are, and each object
+# keeps the directory that made it as its `parent`.
+#
+# A file's type has the end of its name, like `File{:md}`. A kind of directory
+# is a type under `AbstractDirectory`, and a directory of no kind is a
+# `Directory`. So a function can have a method for one kind of file, for one
+# kind of directory, or for a file in a kind of directory:
+#
+#     @def struct MailDirectory <: AbstractDirectory end
+#     title(d::MailDirectory, f::File{:md}) = "A draft"
+#
+# A directory gets its kind from `kinds`, by its path:
+#
+#     kinds[fs"/Users/jake/Mail"] = MailDirectory
+#
+# A kind of directory says what is in it with a method of `kind`, for its
+# directories, or of `child`, for all that it holds:
+#
+#     kind(::MailDirectory, path::FSPath) = MailDirectory
+#
+# A kind can have fields of its own, when each has a default. `child` makes a
+# directory as `T(path=..., parent=...)`.
+
+"The object at `p`. The directories from `/` down to it make it, each with `child`."
 Base.get(p::FSPath) = begin
   @assert p.exists "No FS object $p"
-  t = p.type
-  t == FileType.dir && return Directory(p)
-  t == FileType.file && return File(p)
-  t == FileType.link && return SymLink(p)
-  error("No special type defined for $t")
+  foldl(child, abs(p), init=root())
 end
 
 "An FSObject provides an enhanced interface to each file type"
 @abstract struct FSObject
   path::FSPath
+  parent::Union{FSObject,Nothing}   # the directory that made it. Only `/` has none.
 end
 
-Base.getproperty(file::FSObject, f::Field{:parent}) = Directory(file.path.parent)
+Base.show(io::IO, o::FSObject) = print(io, typeof(o), '(', o.path, ')')
 
 @def struct File{type} <: FSObject end
+@def struct SymLink <: FSObject end
 
-File(path::FSPath) = File{Symbol(path.extension)}(path)
+"A directory. Each kind of directory is a type under this one."
+@abstract struct AbstractDirectory <: FSObject end
+
+"A directory of no kind"
+@def struct Directory <: AbstractDirectory end
+"The top of the file system: the directory at `/`"
+root() = Directory(AbsolutePath(EmptySequence{String}(Path{String})), nothing)
+
+"The kind of each directory that code gave one, by the directory's path. A kind is a type under `AbstractDirectory`."
+const kinds = Dict{AbsolutePath,Type{<:AbstractDirectory}}()
+
+"""
+The kind of the directory at `path`, which is in `d`: a type under
+`AbstractDirectory`. It comes from `kinds`, and a directory that isn't there
+is a `Directory`. A kind of directory has a method of this when the
+directories in it have a kind too.
+"""
+kind(d::AbstractDirectory, path::FSPath) = get(kinds, path, Directory)
+
+"""
+What `d` holds under `name`. Every object but `/` is made here, so a kind of
+directory has a method of this to choose the types of what it holds. A link
+shows as what it leads to, and a link that leads nowhere is a `SymLink`.
+"""
+child(d::AbstractDirectory, name::AbstractString) = begin
+  p = typeof(d.path)(append(d.path.path, String(name)))
+  ispath(p) || return islink(string(p)) ? SymLink(p, d) : error("No FS object $p")
+  t = p.type
+  t == FileType.dir && return kind(d, p)(path=p, parent=d)
+  t == FileType.file && return File{Symbol(p.extension)}(p, d)
+  error("No special type defined for $t")
+end
+
+"The file at `path`. The file need not be there yet, but its directory must be."
+File(path::FSPath) = begin
+  p = abs(path)
+  ispath(p) ? get(p)::File : File{Symbol(p.extension)}(p, get(p.parent))
+end
 File(path::String) = File(FSPath(path))
+
+"The directory at `path`, of whatever kind it is"
+AbstractDirectory(path::FSPath) = get(path)::AbstractDirectory
+AbstractDirectory(path::String) = AbstractDirectory(FSPath(path))
 
 Base.getproperty(file::File, f::Field{:tags}) = get_file_tags(string(file.path))
 Base.getproperty(file::File, f::Field{:size}) = filesize(file.path)B
-Base.propertynames(::File) = (:path, :size, :tags)
+Base.propertynames(::File) = (:path, :parent, :size, :tags)
 
 Base.read(f::File, args...) = read(f.path, args...)
 Base.write(f::File, args...) = write(f.path, args...)
@@ -35,17 +101,13 @@ Base.write(f::File{ext}, x) where ext = begin
   write(f.path, sprint(show, m, x))
 end
 
-@def struct Directory <: FSObject end
-
-Base.getproperty(d::Directory, f::Field{:children}) = map(x->get(d.path*x), readdir(string(d.path)))
-Base.getproperty(d::Directory, f::Field{:size}) = sum(field"size", d.children, init=0B)
-Base.propertynames(::Directory) = (:path, :children, :size)
+Base.getproperty(d::AbstractDirectory, f::Field{:children}) = map(x->child(d, x), readdir(string(d.path)))
+Base.getproperty(d::AbstractDirectory, f::Field{:size}) = sum(field"size", d.children, init=0B)
+Base.propertynames(::AbstractDirectory) = (:path, :parent, :children, :size)
 Base.dirname(f::File) = f.path.parent
-Base.dirname(f::Directory) = f.path
-Base.isdir(::Directory) = true
+Base.dirname(f::AbstractDirectory) = f.path
+Base.isdir(::AbstractDirectory) = true
 Base.isdir(::FSObject) = false
-
-@def struct SymLink <: FSObject end
 
 Base.islink(::SymLink) = true
 Base.islink(::FSObject) = false
